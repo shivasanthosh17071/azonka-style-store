@@ -36,7 +36,7 @@ export interface User {
   _id: string;
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
   role: UserRole;
   addresses: Address[];
   wishlist?: string[] | Product[];
@@ -70,7 +70,7 @@ export interface ProductImage {
 }
 
 export interface ProductVariant {
-  _id: string;
+  _id?: string;
   sku: string;
   size: string;
   color: string;
@@ -104,8 +104,25 @@ export interface Product {
   isBestseller: boolean;
   isNewArrival: boolean;
   isActive: boolean;
+  seo?: { metaTitle?: string; metaDescription?: string };
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ProductPayload {
+  name: string;
+  description: string;
+  category: string;
+  subCategory?: string | null;
+  brand?: string;
+  tags?: string[];
+  images: ProductImage[];
+  variants: Omit<ProductVariant, "_id">[];
+  isFeatured?: boolean;
+  isBestseller?: boolean;
+  isNewArrival?: boolean;
+  isActive?: boolean;
+  seo?: { metaTitle?: string; metaDescription?: string };
 }
 
 export interface ProductListParams {
@@ -123,14 +140,15 @@ export interface ProductListParams {
   isBestseller?: boolean;
   isNewArrival?: boolean;
   inStock?: boolean;
+  includeInactive?: boolean;
 }
 
 /* ---------- reviews ---------- */
 
 export interface Review {
   _id: string;
-  product: string;
-  user: { _id: string; name: string } | string;
+  product: string | { _id: string; name: string; slug: string; images: ProductImage[] };
+  user: { _id: string; name: string; email?: string } | string;
   rating: number;
   comment?: string;
   images?: { url: string }[];
@@ -181,9 +199,26 @@ export interface Coupon {
   maxDiscountCap?: number | null;
   usageLimit?: number | null;
   perUserLimit: number;
+  usedCount?: number;
+  remainingUses?: number | null;
+  isExpired?: boolean;
   validFrom?: string;
   validUntil: string;
   isActive: boolean;
+}
+
+export interface CouponPayload {
+  code: string;
+  description?: string;
+  discountType: "flat" | "percent";
+  discountValue: number;
+  minOrderValue?: number;
+  maxDiscountCap?: number | null;
+  usageLimit?: number | null;
+  perUserLimit?: number;
+  validFrom?: string;
+  validUntil: string;
+  isActive?: boolean;
 }
 
 export interface ApplyCouponResult {
@@ -321,4 +356,118 @@ export interface ServiceabilityResult {
   estimatedDays?: number;
   shippingFee?: number;
   freeShippingThreshold?: number;
+}
+
+/* ---------- admin: dashboard ---------- */
+
+export const STATUS_FLOW: Record<OrderStatus, OrderStatus[]> = {
+  placed: ["confirmed", "cancelled"],
+  confirmed: ["packed", "cancelled"],
+  packed: ["shipped", "cancelled"],
+  shipped: ["out_for_delivery", "returned"],
+  out_for_delivery: ["delivered", "returned"],
+  delivered: ["returned"],
+  cancelled: [],
+  returned: [],
+};
+
+export interface RevenueBucket {
+  revenue: number;
+  orders: number;
+}
+
+export interface DashboardSummary {
+  today: RevenueBucket;
+  week: RevenueBucket;
+  month: RevenueBucket;
+  averageOrderValue: number;
+  pendingOrders: number;
+  lowStockProducts: number;
+  totalCustomers: number;
+  lifetimeRevenue: number;
+}
+
+export interface SalesChartPoint {
+  period: string;
+  revenue: number;
+  orders: number;
+  units: number;
+}
+
+export interface TopProduct {
+  _id: string;
+  name: string;
+  unitsSold: number;
+  revenue: number;
+  slug?: string;
+  image?: string;
+}
+
+export interface CategorySplitRow {
+  category: string;
+  revenue: number;
+  units: number;
+}
+
+/* ---------- admin: customers ---------- */
+
+export interface CustomerRow {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  createdAt: string;
+  orderCount: number;
+  totalSpend: number;
+  lastOrderAt?: string;
+}
+
+export interface CustomerDetail {
+  customer: User;
+  orders: Pick<Order, "_id" | "orderNumber" | "totalAmount" | "orderStatus" | "paymentStatus" | "createdAt" | "items">[];
+  stats: { orderCount: number; totalSpend: number; averageOrderValue: number };
+}
+
+/* ---------- admin: inventory ---------- */
+
+export interface LowStockRow {
+  productId: string;
+  name: string;
+  slug: string;
+  image?: string;
+  variantId: string;
+  sku: string;
+  size: string;
+  color: string;
+  stock: number;
+}
+
+/* ---------- admin: settings ---------- */
+
+export interface StoreSettings {
+  _id: string;
+  business: { name?: string; email?: string; phone?: string; address?: string; gstin?: string; instagram?: string };
+  shippingFee: number;
+  freeShippingThreshold: number;
+  taxPercent: number;
+  lowStockThreshold: number;
+  codEnabled: boolean;
+  codConfirmWindowHours: number;
+  nonServiceablePincodes: string[];
+  servicePincodePrefixes: string[];
+  metroPincodePrefixes: string[];
+}
+
+export interface SettingsResponse {
+  settings: StoreSettings;
+  paymentKeys: { razorpayKeyId: string | null; razorpaySecretSet: boolean; webhookSecretSet: boolean };
+}
+
+/* ---------- admin: uploads ---------- */
+
+export interface UploadedFile {
+  url: string;
+  publicId: string;
+  bytes?: number;
+  format?: string;
 }

@@ -22,7 +22,7 @@ export function MobileDrawerNav({ open, onClose }: { open: boolean; onClose: () 
       >
         <div className="flex items-center justify-between border-b border-line pb-6">
           <span className="font-display text-3xl font-bold">
-            STAPLE<span className="text-brick">/01</span>
+            RAGYAI<span className="text-brick">_m</span>
           </span>
           <Button variant="ghost" size="icon" aria-label="Close menu" onClick={onClose}>
             <X />
@@ -37,7 +37,7 @@ export function MobileDrawerNav({ open, onClose }: { open: boolean; onClose: () 
         </nav>
         <div className="mt-12 border-t border-line pt-6 text-sm text-ink-soft">
           <p className="font-semibold text-ink">Questions?</p>
-          <p className="mt-2">hello@staple01.in</p>
+          <p className="mt-2">hello@ragyaim.in</p>
           <p>+91 98765 43210</p>
         </div>
       </aside>

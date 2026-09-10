@@ -25,6 +25,18 @@ export class ApiException extends Error {
   }
 }
 
+/**
+ * Field-level validation errors (422s) are far more useful to a user than the generic
+ * "Validation failed" envelope message — this surfaces the first specific one when present.
+ */
+export function errorMessage(err: unknown, fallback: string): string {
+  if (err instanceof ApiException) {
+    if (err.errors?.length) return err.errors.map((e) => e.message).join(" · ");
+    return err.message || fallback;
+  }
+  return fallback;
+}
+
 http.interceptors.request.use((config) => {
   if (accessToken) {
     config.headers = config.headers || {};
@@ -33,7 +45,13 @@ http.interceptors.request.use((config) => {
   return config;
 });
 
-const AUTH_EXEMPT = ["/auth/login", "/auth/register", "/auth/refresh-token", "/auth/send-otp", "/auth/verify-otp"];
+const AUTH_EXEMPT = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh-token",
+  "/auth/send-otp",
+  "/auth/verify-otp",
+];
 
 let refreshPromise: Promise<string | null> | null = null;
 
@@ -87,17 +105,29 @@ export async function apiGetWithMeta<T>(
   return { data: res.data.data as T, meta: res.data.meta };
 }
 
-export async function apiPost<T>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T> {
+export async function apiPost<T>(
+  url: string,
+  body?: unknown,
+  config?: AxiosRequestConfig,
+): Promise<T> {
   const res = await http.post<ApiEnvelope<T>>(url, body, config);
   return res.data.data as T;
 }
 
-export async function apiPut<T>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T> {
+export async function apiPut<T>(
+  url: string,
+  body?: unknown,
+  config?: AxiosRequestConfig,
+): Promise<T> {
   const res = await http.put<ApiEnvelope<T>>(url, body, config);
   return res.data.data as T;
 }
 
-export async function apiPatch<T>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T> {
+export async function apiPatch<T>(
+  url: string,
+  body?: unknown,
+  config?: AxiosRequestConfig,
+): Promise<T> {
   const res = await http.patch<ApiEnvelope<T>>(url, body, config);
   return res.data.data as T;
 }

@@ -73,7 +73,7 @@ export function HomePage() {
         <img
           key={slide.image}
           src={slide.image}
-          alt="Model wearing the STAPLE/01 everyday tee"
+          alt="Model wearing the RAGYAI_m everyday tee"
           width={1600}
           height={900}
           className="h-[520px] w-full object-cover object-[62%_center] sm:h-[610px]"
@@ -184,7 +184,7 @@ export function HomePage() {
       <section className="relative overflow-hidden bg-ink">
         <img
           src={bannerImage}
-          alt="STAPLE/01 campaign with relaxed fit tees"
+          alt="RAGYAI_m campaign with relaxed fit tees"
           loading="lazy"
           width={1600}
           height={650}
@@ -192,7 +192,7 @@ export function HomePage() {
         />
         <div className="absolute inset-0 grid place-items-center bg-ink/25 text-center">
           <p className="font-display text-7xl font-semibold tracking-[-0.05em] text-primary-foreground sm:text-[10rem]">
-            STAPLE<span className="text-brick">/01</span>
+            RAGYAI<span className="text-brick">_m</span>
           </p>
         </div>
       </section>

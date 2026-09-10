@@ -40,7 +40,7 @@ export function Header() {
             <Menu className="size-5" />
           </Button>
           <Link to="/" className="font-display text-[26px] font-bold leading-none tracking-[-0.04em] text-ink sm:text-[31px]">
-            STAPLE<span className="text-brick">/01</span>
+            RAGYAI<span className="text-brick">_m</span>
           </Link>
           <div className="flex items-center gap-0 sm:absolute sm:right-8">
             <Button variant="ghost" size="icon" aria-label="Search" onClick={() => setSearchOpen((v) => !v)}>

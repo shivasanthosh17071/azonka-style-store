@@ -9,7 +9,7 @@ export const POLICIES: Record<string, PolicyContent> = {
     body: [
       "We collect only the information needed to process your orders and improve your shopping experience — your name, contact details, shipping address and order history.",
       "We never sell your personal data. Payment details are handled directly by our payment partner (Razorpay) and are never stored on our servers.",
-      "You can request a copy of your data or ask us to delete your account at any time by writing to hello@staple01.in.",
+      "You can request a copy of your data or ask us to delete your account at any time by writing to hello@ragyaim.in.",
     ],
   },
   shipping: {
@@ -42,7 +42,7 @@ export const POLICIES: Record<string, PolicyContent> = {
     body: [
       "Unworn items with tags attached can be returned within 7 days of delivery for a full refund or exchange.",
       "Prepaid orders are refunded to the original payment method within 5–7 business days of us receiving the returned item.",
-      "To start a return, reach out on hello@staple01.in with your order number — we'll arrange a pickup where available.",
+      "To start a return, reach out on hello@ragyaim.in with your order number — we'll arrange a pickup where available.",
     ],
   },
 };

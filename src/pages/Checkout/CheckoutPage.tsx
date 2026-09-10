@@ -55,7 +55,7 @@ export function CheckoutPage() {
 
   useEffect(() => {
     if (isAuthenticated && user && !form.email) {
-      setForm((f) => ({ ...f, name: f.name || user.name, email: user.email, phone: f.phone || user.phone }));
+      setForm((f) => ({ ...f, name: f.name || user.name, email: user.email, phone: f.phone || user.phone || "" }));
     }
   }, [isAuthenticated, user, form.email]);
 
@@ -150,7 +150,7 @@ export function CheckoutPage() {
         amount: rzpOrder.amount,
         currency: rzpOrder.currency,
         order_id: rzpOrder.razorpayOrderId,
-        name: "STAPLE/01",
+        name: "RAGYAI_m",
         description: `Order ${rzpOrder.orderNumber}`,
         prefill: rzpOrder.prefill,
         theme: { color: "#8a2b26" },

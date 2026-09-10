@@ -1,7 +1,7 @@
 import { apiGet, apiPost } from "./client";
 import type { User } from "@/types";
 
-export const register = (body: { name: string; email: string; phone: string; password: string }) =>
+export const register = (body: { name: string; email: string; password: string }) =>
   apiPost<{ user: User; accessToken: string }>("/auth/register", body);
 
 export const login = (body: { identifier: string; password: string }) =>
@@ -21,5 +21,9 @@ export const forgotPassword = (body: { email: string }) => apiPost<undefined>("/
 
 export const resetPassword = (body: { token: string; password: string }) =>
   apiPost<undefined>("/auth/reset-password", body);
+
+export const verifyEmail = (token: string) => apiPost<{ user: User }>("/auth/verify-email", { token });
+
+export const resendVerificationEmail = () => apiPost<undefined>("/auth/resend-verification");
 
 export const getMe = () => apiGet<{ user: User }>("/auth/me");

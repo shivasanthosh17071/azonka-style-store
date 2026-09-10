@@ -5,7 +5,7 @@ export function AboutPage() {
   return (
     <div>
       <div className="relative overflow-hidden bg-ink">
-        <img src={bannerImage} alt="STAPLE/01 studio" className="h-[280px] w-full object-cover opacity-70 sm:h-[380px]" />
+        <img src={bannerImage} alt="RAGYAI_m studio" className="h-[280px] w-full object-cover opacity-70 sm:h-[380px]" />
         <div className="absolute inset-0 grid place-items-center bg-ink/25 text-center">
           <p className="font-display text-6xl font-semibold text-primary-foreground sm:text-8xl">Our story</p>
         </div>
@@ -14,7 +14,7 @@ export function AboutPage() {
         <SectionHeading eyebrow="Since day one" title="Everyday, considered" copy="" />
         <div className="mt-8 space-y-4 text-sm leading-6 text-ink-soft">
           <p>
-            STAPLE/01 started with a simple frustration: most "basic" t-shirts weren't basic at all — thin fabric, boxy
+            RAGYAI_m started with a simple frustration: most "basic" t-shirts weren't basic at all — thin fabric, boxy
             fits, colours that faded after two washes. We set out to build the tee we actually wanted to wear on repeat.
           </p>
           <p>

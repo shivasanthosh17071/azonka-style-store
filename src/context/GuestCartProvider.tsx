@@ -20,7 +20,7 @@ type Action =
   | { type: "REMOVE"; sku: string }
   | { type: "CLEAR" };
 
-const STORAGE_KEY = "staple01_guest_cart";
+const STORAGE_KEY = "ragyai_m_guest_cart";
 
 function reducer(state: GuestCartItem[], action: Action): GuestCartItem[] {
   switch (action.type) {

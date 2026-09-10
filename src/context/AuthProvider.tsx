@@ -11,8 +11,7 @@ interface AuthContextValue {
   status: AuthStatus;
   isAuthenticated: boolean;
   login: (identifier: string, password: string) => Promise<User>;
-  register: (body: { name: string; email: string; phone: string; password: string }) => Promise<User>;
-  loginWithOtp: (phone: string, otp: string) => Promise<User>;
+  register: (body: { name: string; email: string; password: string }) => Promise<User>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -65,18 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const register = useCallback(
-    async (body: { name: string; email: string; phone: string; password: string }) => {
+    async (body: { name: string; email: string; password: string }) => {
       const res = await authApi.register(body);
-      setAccessToken(res.accessToken);
-      settle(res.user);
-      return res.user;
-    },
-    [settle],
-  );
-
-  const loginWithOtp = useCallback(
-    async (phone: string, otp: string) => {
-      const res = await authApi.verifyOtp({ phone, otp });
       setAccessToken(res.accessToken);
       settle(res.user);
       return res.user;
@@ -99,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, status, isAuthenticated: status === "authenticated", login, register, loginWithOtp, logout, refreshUser }}
+      value={{ user, status, isAuthenticated: status === "authenticated", login, register, logout, refreshUser }}
     >
       {children}
     </AuthContext.Provider>

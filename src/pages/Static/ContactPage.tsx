@@ -45,7 +45,7 @@ export function ContactPage() {
         <div className="space-y-6 text-sm text-ink-soft">
           <div className="flex items-start gap-3">
             <Mail className="mt-0.5 size-4 text-brick" />
-            <a href="mailto:hello@staple01.in">hello@staple01.in</a>
+            <a href="mailto:hello@ragyaim.in">hello@ragyaim.in</a>
           </div>
           <div className="flex items-start gap-3">
             <Phone className="mt-0.5 size-4 text-brick" />

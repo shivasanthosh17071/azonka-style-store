@@ -1,4 +1,4 @@
-import { apiDelete, apiGetWithMeta, apiPost, apiPut } from "./client";
+import { apiDelete, apiGetWithMeta, apiPatch, apiPost, apiPut } from "./client";
 import type { PaginationMeta, RatingBreakdown, Review } from "@/types";
 
 export const getProductReviews = async (productId: string, params: { page?: number; limit?: number } = {}) => {
@@ -16,3 +16,13 @@ export const updateReview = (id: string, body: { rating?: number; comment?: stri
   apiPut<{ review: Review }>(`/reviews/${id}`, body);
 
 export const deleteReview = (id: string) => apiDelete<undefined>(`/reviews/${id}`);
+
+/* ---------- admin ---------- */
+
+export const listPendingReviews = async (params: { page?: number; limit?: number } = {}) => {
+  const { data, meta } = await apiGetWithMeta<{ reviews: Review[] }>("/reviews/pending", { params });
+  return { reviews: data.reviews, meta: meta as PaginationMeta };
+};
+
+export const moderateReview = (id: string, isApproved: boolean) =>
+  apiPatch<{ review: Review }>(`/reviews/${id}/approve`, { isApproved });

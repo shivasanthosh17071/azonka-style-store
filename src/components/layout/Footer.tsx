@@ -29,7 +29,7 @@ export function Footer() {
         <div className="grid gap-10 sm:grid-cols-[1.3fr_1fr_1fr_1fr]">
           <div>
             <p className="font-display text-4xl font-bold">
-              STAPLE<span className="text-brick">/01</span>
+              RAGYAI<span className="text-brick">_m</span>
             </p>
             <p className="mt-4 max-w-xs text-sm leading-6 text-primary-foreground/60">
               Everyday essentials, considered from the first stitch to the last wear.
@@ -41,7 +41,7 @@ export function Footer() {
               <a href="https://facebook.com" aria-label="Facebook" target="_blank" rel="noreferrer">
                 <Facebook className="size-4 text-primary-foreground/70" />
               </a>
-              <span className="text-xs font-bold tracking-[0.12em] text-primary-foreground/70">@STAPLE01</span>
+              <span className="text-xs font-bold tracking-[0.12em] text-primary-foreground/70">@RAGYAI_M</span>
             </div>
           </div>
           <div>
@@ -72,14 +72,14 @@ export function Footer() {
           <div>
             <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-brick">Say hello</h3>
             <div className="mt-5 grid gap-3 text-sm text-primary-foreground/65">
-              <a href="mailto:hello@staple01.in">hello@staple01.in</a>
+              <a href="mailto:hello@ragyaim.in">hello@ragyaim.in</a>
               <a href="tel:+919876543210">+91 98765 43210</a>
               <p>Mon — Sat, 10am — 6pm</p>
             </div>
           </div>
         </div>
         <div className="mt-12 border-t border-primary-foreground/10 pt-6 text-center text-[10px] uppercase tracking-[0.17em] text-primary-foreground/40">
-          © {new Date().getFullYear()} STAPLE/01 · Made for repeat wear
+          © {new Date().getFullYear()} RAGYAI_m · Made for repeat wear
         </div>
       </div>
     </footer>

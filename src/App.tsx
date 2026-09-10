@@ -1,6 +1,8 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { RootLayout } from "@/layouts/RootLayout";
 import { RequireAuth } from "@/routes/RequireAuth";
+import { RequireAdmin } from "@/routes/RequireAdmin";
 import { HomePage } from "@/pages/Home/HomePage";
 import { ShopPage } from "@/pages/Shop/ShopPage";
 import { ProductDetailPage } from "@/pages/Product/ProductDetailPage";
@@ -9,6 +11,9 @@ import { CheckoutPage } from "@/pages/Checkout/CheckoutPage";
 import { OrderConfirmationPage } from "@/pages/OrderConfirmation/OrderConfirmationPage";
 import { LoginPage } from "@/pages/Auth/LoginPage";
 import { RegisterPage } from "@/pages/Auth/RegisterPage";
+import { ForgotPasswordPage } from "@/pages/Auth/ForgotPasswordPage";
+import { ResetPasswordPage } from "@/pages/Auth/ResetPasswordPage";
+import { VerifyEmailPage } from "@/pages/Auth/VerifyEmailPage";
 import { AccountLayout } from "@/pages/Account/AccountLayout";
 import { ProfilePage } from "@/pages/Account/ProfilePage";
 import { AddressesPage } from "@/pages/Account/AddressesPage";
@@ -22,9 +27,57 @@ import { FaqPage } from "@/pages/Static/FaqPage";
 import { PolicyPage } from "@/pages/Static/PolicyPage";
 import { NotFoundPage } from "@/pages/NotFound/NotFoundPage";
 
+// Admin is a large, separate chunk (charts + every admin page) that regular storefront
+// visitors never need — lazy-loaded so it never ships in their initial bundle.
+const AdminLayout = lazy(() => import("@/layouts/AdminLayout").then((m) => ({ default: m.AdminLayout })));
+const DashboardPage = lazy(() => import("@/pages/Admin/DashboardPage").then((m) => ({ default: m.DashboardPage })));
+const ProductsListPage = lazy(() => import("@/pages/Admin/Products/ProductsListPage").then((m) => ({ default: m.ProductsListPage })));
+const ProductFormPage = lazy(() => import("@/pages/Admin/Products/ProductFormPage").then((m) => ({ default: m.ProductFormPage })));
+const AdminOrdersListPage = lazy(() => import("@/pages/Admin/Orders/OrdersListPage").then((m) => ({ default: m.OrdersListPage })));
+const AdminOrderDetailPage = lazy(() => import("@/pages/Admin/Orders/OrderDetailPage").then((m) => ({ default: m.OrderDetailPage })));
+const CustomersListPage = lazy(() => import("@/pages/Admin/Customers/CustomersListPage").then((m) => ({ default: m.CustomersListPage })));
+const CustomerDetailPage = lazy(() => import("@/pages/Admin/Customers/CustomerDetailPage").then((m) => ({ default: m.CustomerDetailPage })));
+const CouponsPage = lazy(() => import("@/pages/Admin/Coupons/CouponsPage").then((m) => ({ default: m.CouponsPage })));
+const CategoriesPage = lazy(() => import("@/pages/Admin/Categories/CategoriesPage").then((m) => ({ default: m.CategoriesPage })));
+const ReviewsPage = lazy(() => import("@/pages/Admin/Reviews/ReviewsPage").then((m) => ({ default: m.ReviewsPage })));
+const InventoryPage = lazy(() => import("@/pages/Admin/Inventory/InventoryPage").then((m) => ({ default: m.InventoryPage })));
+const SettingsPage = lazy(() => import("@/pages/Admin/Settings/SettingsPage").then((m) => ({ default: m.SettingsPage })));
+
+function AdminFallback() {
+  return <div className="flex min-h-screen items-center justify-center bg-paper text-sm text-ink-soft">Loading…</div>;
+}
+
 export default function App() {
   return (
     <Routes>
+      {/* Admin dashboard — its own sidebar layout, deliberately outside RootLayout so the
+          customer-facing header/footer/cart-drawer/bottom-tab-bar never render here, and
+          lazy-loaded so the storefront's own bundle never grows because of it. */}
+      <Route
+        path="admin"
+        element={
+          <RequireAdmin>
+            <Suspense fallback={<AdminFallback />}>
+              <AdminLayout />
+            </Suspense>
+          </RequireAdmin>
+        }
+      >
+        <Route index element={<DashboardPage />} />
+        <Route path="products" element={<ProductsListPage />} />
+        <Route path="products/new" element={<ProductFormPage />} />
+        <Route path="products/:slug" element={<ProductFormPage />} />
+        <Route path="orders" element={<AdminOrdersListPage />} />
+        <Route path="orders/:orderId" element={<AdminOrderDetailPage />} />
+        <Route path="customers" element={<CustomersListPage />} />
+        <Route path="customers/:customerId" element={<CustomerDetailPage />} />
+        <Route path="coupons" element={<CouponsPage />} />
+        <Route path="categories" element={<CategoriesPage />} />
+        <Route path="reviews" element={<ReviewsPage />} />
+        <Route path="inventory" element={<InventoryPage />} />
+        <Route path="settings" element={<SettingsPage />} />
+      </Route>
+
       <Route element={<RootLayout />}>
         <Route index element={<HomePage />} />
         <Route path="shop" element={<ShopPage />} />
@@ -35,6 +88,9 @@ export default function App() {
         <Route path="order-confirmation/:orderId" element={<OrderConfirmationPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
+        <Route path="forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="reset-password" element={<ResetPasswordPage />} />
+        <Route path="verify-email" element={<VerifyEmailPage />} />
         <Route
           path="account"
           element={
