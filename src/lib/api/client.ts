@@ -1,7 +1,7 @@
 import axios, { AxiosError, type AxiosRequestConfig } from "axios";
 import type { ApiEnvelope, PaginationMeta } from "@/types";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
+const baseURL = import.meta.env.VITE_API_BASE_URL || "https://ragyaibackend.vercel.app/api/v1";
 
 export const http = axios.create({
   baseURL,
