@@ -188,6 +188,35 @@ export interface HydratedCart {
   removedUnavailable?: number;
 }
 
+/* ---------- reels ---------- */
+
+export interface ReelProductRef {
+  _id: string;
+  name: string;
+  slug: string;
+  images: ProductImage[];
+  basePrice: number;
+}
+
+export interface Reel {
+  _id: string;
+  video: { url: string; publicId: string };
+  caption?: string;
+  product?: ReelProductRef | null;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReelPayload {
+  video: { url: string; publicId: string };
+  caption?: string;
+  product?: string | null;
+  displayOrder?: number;
+  isActive?: boolean;
+}
+
 /* ---------- coupons ---------- */
 
 export interface Coupon {

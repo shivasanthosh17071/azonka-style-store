@@ -8,9 +8,17 @@ import * as reviewsApi from "@/lib/api/reviews.api";
 import * as customersApi from "@/lib/api/customers.api";
 import * as inventoryApi from "@/lib/api/inventory.api";
 import * as settingsApi from "@/lib/api/settings.api";
+import * as reelsApi from "@/lib/api/reels.api";
 import type { CategoryPayload } from "@/lib/api/categories.api";
 import type { OrderListParams } from "@/lib/api/orders.api";
-import type { CouponPayload, OrderStatus, ProductListParams, ProductPayload, StoreSettings } from "@/types";
+import type {
+  CouponPayload,
+  OrderStatus,
+  ProductListParams,
+  ProductPayload,
+  ReelPayload,
+  StoreSettings,
+} from "@/types";
 
 /* ---------- dashboard ---------- */
 
@@ -24,13 +32,19 @@ export const useSalesChart = (range: "7d" | "30d" | "12m", groupBy: "day" | "wee
   });
 
 export const useTopProducts = (limit = 5) =>
-  useQuery({ queryKey: ["admin", "top-products", limit], queryFn: () => dashboardApi.getTopProducts(limit) });
+  useQuery({
+    queryKey: ["admin", "top-products", limit],
+    queryFn: () => dashboardApi.getTopProducts(limit),
+  });
 
 export const useCategorySplit = () =>
   useQuery({ queryKey: ["admin", "category-split"], queryFn: dashboardApi.getCategorySplit });
 
 export const useRecentOrders = (limit = 8) =>
-  useQuery({ queryKey: ["admin", "recent-orders", limit], queryFn: () => dashboardApi.getRecentOrders(limit) });
+  useQuery({
+    queryKey: ["admin", "recent-orders", limit],
+    queryFn: () => dashboardApi.getRecentOrders(limit),
+  });
 
 /* ---------- products ---------- */
 
@@ -59,7 +73,8 @@ export const useCreateProduct = () => {
 export const useUpdateProduct = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, body }: { id: string; body: Partial<ProductPayload> }) => productsApi.updateProduct(id, body),
+    mutationFn: ({ id, body }: { id: string; body: Partial<ProductPayload> }) =>
+      productsApi.updateProduct(id, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "products"] }),
   });
 };
@@ -75,8 +90,15 @@ export const useDeleteProduct = () => {
 export const useUpdateVariantStock = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ productId, variantId, body }: { productId: string; variantId: string; body: { stock?: number; delta?: number } }) =>
-      productsApi.updateVariantStock(productId, variantId, body),
+    mutationFn: ({
+      productId,
+      variantId,
+      body,
+    }: {
+      productId: string;
+      variantId: string;
+      body: { stock?: number; delta?: number };
+    }) => productsApi.updateVariantStock(productId, variantId, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin", "products"] });
       qc.invalidateQueries({ queryKey: ["admin", "low-stock"] });
@@ -106,7 +128,8 @@ export const useCreateCategory = () => {
 export const useUpdateCategory = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, body }: { id: string; body: Partial<CategoryPayload> }) => categoriesApi.updateCategory(id, body),
+    mutationFn: ({ id, body }: { id: string; body: Partial<CategoryPayload> }) =>
+      categoriesApi.updateCategory(id, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin", "categories"] });
       qc.invalidateQueries({ queryKey: ["categories"] });
@@ -157,8 +180,13 @@ export const useUpdateOrderStatus = () => {
 export const useUpdateCourier = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, body }: { id: string; body: Parameters<typeof ordersApi.updateCourier>[1] }) =>
-      ordersApi.updateCourier(id, body),
+    mutationFn: ({
+      id,
+      body,
+    }: {
+      id: string;
+      body: Parameters<typeof ordersApi.updateCourier>[1];
+    }) => ordersApi.updateCourier(id, body),
     onSuccess: (_data, vars) => qc.invalidateQueries({ queryKey: ["admin", "order", vars.id] }),
   });
 };
@@ -166,8 +194,13 @@ export const useUpdateCourier = () => {
 export const useRefundOrder = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ orderId, body }: { orderId: string; body?: { amount?: number; reason?: string } }) =>
-      ordersApi.refundOrder(orderId, body),
+    mutationFn: ({
+      orderId,
+      body,
+    }: {
+      orderId: string;
+      body?: { amount?: number; reason?: string };
+    }) => ordersApi.refundOrder(orderId, body),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ["admin", "order", vars.orderId] });
       qc.invalidateQueries({ queryKey: ["admin", "orders"] });
@@ -178,7 +211,10 @@ export const useRefundOrder = () => {
 /* ---------- coupons ---------- */
 
 export const useAdminCoupons = (params: { page?: number; limit?: number } = {}) =>
-  useQuery({ queryKey: ["admin", "coupons", params], queryFn: () => couponsApi.listCoupons(params) });
+  useQuery({
+    queryKey: ["admin", "coupons", params],
+    queryFn: () => couponsApi.listCoupons(params),
+  });
 
 export const useCreateCoupon = () => {
   const qc = useQueryClient();
@@ -191,7 +227,8 @@ export const useCreateCoupon = () => {
 export const useUpdateCoupon = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, body }: { id: string; body: Partial<CouponPayload> }) => couponsApi.updateCoupon(id, body),
+    mutationFn: ({ id, body }: { id: string; body: Partial<CouponPayload> }) =>
+      couponsApi.updateCoupon(id, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "coupons"] }),
   });
 };
@@ -207,19 +244,25 @@ export const useDeleteCoupon = () => {
 /* ---------- reviews ---------- */
 
 export const usePendingReviews = (params: { page?: number; limit?: number } = {}) =>
-  useQuery({ queryKey: ["admin", "pending-reviews", params], queryFn: () => reviewsApi.listPendingReviews(params) });
+  useQuery({
+    queryKey: ["admin", "pending-reviews", params],
+    queryFn: () => reviewsApi.listPendingReviews(params),
+  });
 
 export const useModerateReview = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, isApproved }: { id: string; isApproved: boolean }) => reviewsApi.moderateReview(id, isApproved),
+    mutationFn: ({ id, isApproved }: { id: string; isApproved: boolean }) =>
+      reviewsApi.moderateReview(id, isApproved),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "pending-reviews"] }),
   });
 };
 
 /* ---------- customers ---------- */
 
-export const useAdminCustomers = (params: { page?: number; limit?: number; search?: string } = {}) =>
+export const useAdminCustomers = (
+  params: { page?: number; limit?: number; search?: string } = {},
+) =>
   useQuery({
     queryKey: ["admin", "customers", params],
     queryFn: () => customersApi.listCustomers(params),
@@ -236,16 +279,62 @@ export const useAdminCustomer = (id: string | undefined) =>
 /* ---------- inventory ---------- */
 
 export const useLowStock = (threshold?: number) =>
-  useQuery({ queryKey: ["admin", "low-stock", threshold], queryFn: () => inventoryApi.getLowStock(threshold) });
+  useQuery({
+    queryKey: ["admin", "low-stock", threshold],
+    queryFn: () => inventoryApi.getLowStock(threshold),
+  });
 
 /* ---------- settings ---------- */
 
-export const useAdminSettings = () => useQuery({ queryKey: ["admin", "settings"], queryFn: settingsApi.getSettings });
+export const useAdminSettings = () =>
+  useQuery({ queryKey: ["admin", "settings"], queryFn: settingsApi.getSettings });
 
 export const useUpdateSettings = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Partial<StoreSettings>) => settingsApi.updateSettings(body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "settings"] }),
+  });
+};
+
+/* ---------- reels ---------- */
+
+export const useAdminReels = () =>
+  useQuery({
+    queryKey: ["admin", "reels"],
+    queryFn: () => reelsApi.listReels(true).then((r) => r.reels),
+  });
+
+export const useCreateReel = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ReelPayload) => reelsApi.createReel(body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "reels"] });
+      qc.invalidateQueries({ queryKey: ["reels"] });
+    },
+  });
+};
+
+export const useUpdateReel = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: Partial<ReelPayload> }) =>
+      reelsApi.updateReel(id, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "reels"] });
+      qc.invalidateQueries({ queryKey: ["reels"] });
+    },
+  });
+};
+
+export const useDeleteReel = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => reelsApi.deleteReel(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "reels"] });
+      qc.invalidateQueries({ queryKey: ["reels"] });
+    },
   });
 };

@@ -10,6 +10,7 @@ import {
   Star,
   AlertTriangle,
   Settings as SettingsIcon,
+  Clapperboard,
   Menu,
   X,
   LogOut,
@@ -26,6 +27,7 @@ const NAV = [
   { label: "Coupons", to: "/admin/coupons", icon: Ticket },
   { label: "Categories", to: "/admin/categories", icon: FolderTree },
   { label: "Reviews", to: "/admin/reviews", icon: Star },
+  { label: "Reels", to: "/admin/reels", icon: Clapperboard },
   { label: "Inventory", to: "/admin/inventory", icon: AlertTriangle },
   { label: "Settings", to: "/admin/settings", icon: SettingsIcon },
 ];
@@ -39,7 +41,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <p className="font-display text-2xl font-bold text-primary-foreground">
           RAGYAI<span className="text-brick">_m</span>
         </p>
-        <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-primary-foreground/50">Admin</p>
+        <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-primary-foreground/50">
+          Admin
+        </p>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {NAV.map((item) => (
@@ -75,7 +79,13 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             <p className="truncate text-xs font-semibold text-primary-foreground">{user?.name}</p>
             <p className="truncate text-[10px] text-primary-foreground/50">{user?.email}</p>
           </div>
-          <Button variant="ghost" size="icon" aria-label="Log out" onClick={() => logout()} className="text-primary-foreground/65 hover:text-primary-foreground">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Log out"
+            onClick={() => logout()}
+            className="text-primary-foreground/65 hover:text-primary-foreground"
+          >
             <LogOut className="size-4" />
           </Button>
         </div>
@@ -94,10 +104,19 @@ export function AdminLayout() {
       </aside>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-ink/40 sm:hidden" onClick={() => setMobileOpen(false)}>
+        <div
+          className="fixed inset-0 z-40 bg-ink/40 sm:hidden"
+          onClick={() => setMobileOpen(false)}
+        >
           <div className="h-full w-72 bg-ink shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-end p-3">
-              <Button variant="ghost" size="icon" aria-label="Close menu" onClick={() => setMobileOpen(false)} className="text-primary-foreground">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Close menu"
+                onClick={() => setMobileOpen(false)}
+                className="text-primary-foreground"
+              >
                 <X className="size-5" />
               </Button>
             </div>
@@ -108,7 +127,12 @@ export function AdminLayout() {
 
       <div className="sm:pl-64">
         <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-line bg-background/95 px-4 backdrop-blur sm:hidden">
-          <Button variant="ghost" size="icon" aria-label="Open menu" onClick={() => setMobileOpen(true)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Open menu"
+            onClick={() => setMobileOpen(true)}
+          >
             <Menu className="size-5" />
           </Button>
           <p className="font-display text-lg font-bold">

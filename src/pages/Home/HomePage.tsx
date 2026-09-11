@@ -6,6 +6,7 @@ import { SectionHeading } from "@/components/common/SectionHeading";
 import { ProductCard } from "@/components/common/ProductCard";
 import { PillTabs } from "@/components/common/PillTabs";
 import { SkeletonCard } from "@/components/common/SkeletonCard";
+import { ReelsSection } from "@/components/common/ReelsSection";
 import { useProducts, useCategories } from "@/hooks/queries/useProducts";
 import type { Category } from "@/types";
 import bannerImage from "@/assets/brand-banner.jpg";
@@ -180,6 +181,8 @@ export function HomePage() {
               ))}
         </div>
       </section>
+
+      <ReelsSection />
 
       <section className="relative overflow-hidden bg-ink">
         <img

@@ -73,6 +73,9 @@ const InventoryPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import("@/pages/Admin/Settings/SettingsPage").then((m) => ({ default: m.SettingsPage })),
 );
+const ReelsPage = lazy(() =>
+  import("@/pages/Admin/Reels/ReelsPage").then((m) => ({ default: m.ReelsPage })),
+);
 
 function AdminFallback() {
   return <Loader fullScreen className="bg-paper" />;
@@ -107,6 +110,7 @@ export default function App() {
         <Route path="reviews" element={<ReviewsPage />} />
         <Route path="inventory" element={<InventoryPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="reels" element={<ReelsPage />} />
       </Route>
 
       <Route element={<RootLayout />}>
