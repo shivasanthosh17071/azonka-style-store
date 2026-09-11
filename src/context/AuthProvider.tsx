@@ -63,15 +63,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [settle],
   );
 
-  const register = useCallback(
-    async (body: { name: string; email: string; password: string }) => {
-      const res = await authApi.register(body);
-      setAccessToken(res.accessToken);
-      settle(res.user);
-      return res.user;
-    },
-    [settle],
-  );
+  const register = useCallback(async (body: { name: string; email: string; password: string }) => {
+    // No session is created here — the account can't log in until the verification
+    // email is confirmed, so we deliberately leave auth status as "guest".
+    const res = await authApi.register(body);
+    return res.user;
+  }, []);
 
   const logout = useCallback(async () => {
     await authApi.logout().catch(() => {});
@@ -88,7 +85,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, status, isAuthenticated: status === "authenticated", login, register, logout, refreshUser }}
+      value={{
+        user,
+        status,
+        isAuthenticated: status === "authenticated",
+        login,
+        register,
+        logout,
+        refreshUser,
+      }}
     >
       {children}
     </AuthContext.Provider>

@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthProvider";
-import { useCart } from "@/hooks/useCart";
-import { errorMessage } from "@/lib/api/client";
+import * as authApi from "@/lib/api/auth.api";
+import { ApiException, errorMessage } from "@/lib/api/client";
 
 // Mirrors the backend's zod rules exactly (backend/src/validators/common.js) so a user
 // never gets past client-side checks only to be rejected by the server with a vague 422.
@@ -14,43 +15,87 @@ const EMAIL_RE = /^\S+@\S+\.\S+$/;
 const hasLetter = (s: string) => /[a-zA-Z]/.test(s);
 const hasDigit = (s: string) => /\d/.test(s);
 
+type FieldErrors = Partial<Record<"name" | "email" | "password" | "confirmPassword", string>>;
+
 export function RegisterPage() {
   const { register } = useAuth();
-  const cart = useCart();
-  const navigate = useNavigate();
 
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
 
-  const validate = (): string | null => {
-    if (form.name.trim().length < 2) return "Enter your full name";
-    if (!EMAIL_RE.test(form.email)) return "Enter a valid email address";
-    if (form.password.length < 8 || form.password.length > 72)
-      return "Password must be 8-72 characters";
-    if (!hasLetter(form.password) || !hasDigit(form.password))
-      return "Password must contain at least one letter and one number";
-    if (form.password !== form.confirmPassword) return "Passwords don't match";
-    return null;
+  const validate = (): FieldErrors => {
+    const errors: FieldErrors = {};
+    if (form.name.trim().length < 2) errors.name = "Enter your full name";
+    if (!EMAIL_RE.test(form.email.trim())) errors.email = "Enter a valid email address";
+    if (form.password.length < 8 || form.password.length > 72) {
+      errors.password = "Password must be 8-72 characters";
+    } else if (!hasLetter(form.password) || !hasDigit(form.password)) {
+      errors.password = "Password must contain at least one letter and one number";
+    }
+    if (form.confirmPassword !== form.password) errors.confirmPassword = "Passwords don't match";
+    return errors;
   };
 
   const submit = async () => {
-    const error = validate();
-    if (error) {
-      toast.error(error);
-      return;
-    }
+    const errors = validate();
+    setFieldErrors(errors);
+    if (Object.keys(errors).length) return;
+
     setLoading(true);
     try {
-      await register({ name: form.name, email: form.email, password: form.password });
-      await cart.mergeGuestCartIntoServer();
-      toast.success("Account created — check your email to verify it");
-      navigate("/", { replace: true });
+      const email = form.email.trim().toLowerCase();
+      await register({ name: form.name.trim(), email, password: form.password });
+      setSentTo(email);
     } catch (err) {
-      toast.error(errorMessage(err, "Could not create account"));
+      if (err instanceof ApiException && err.status === 409) {
+        setFieldErrors({ email: err.message });
+      } else {
+        toast.error(errorMessage(err, "Could not create account"));
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  const resend = async () => {
+    if (!sentTo) return;
+    setResending(true);
+    try {
+      await authApi.resendVerificationEmail({ email: sentTo });
+      toast.success("Verification email sent again");
+    } catch (err) {
+      toast.error(errorMessage(err, "Could not resend the email"));
+    } finally {
+      setResending(false);
+    }
+  };
+
+  if (sentTo) {
+    return (
+      <div className="section-wrap flex min-h-[70vh] flex-col items-center justify-center py-16 text-center">
+        <CheckCircle2 className="size-12 text-brick" />
+        <h1 className="mt-6 font-display text-3xl">Check your inbox</h1>
+        <p className="mt-2 max-w-sm text-sm text-ink-soft">
+          We sent a verification link to <span className="font-semibold text-ink">{sentTo}</span>.
+          Click it to activate your account — you'll need to verify before you can log in.
+        </p>
+        <Button
+          onClick={resend}
+          disabled={resending}
+          variant="outline"
+          className="mt-6 rounded-none text-xs uppercase tracking-[0.15em]"
+        >
+          Resend verification email
+        </Button>
+        <Button asChild className="mt-3 h-11 w-full max-w-sm rounded-none bg-ink hover:bg-brick">
+          <Link to="/login">Back to login</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="section-wrap flex min-h-[70vh] items-center justify-center py-16">
@@ -70,7 +115,11 @@ export function RegisterPage() {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="mt-1"
+              aria-invalid={!!fieldErrors.name}
             />
+            {fieldErrors.name && (
+              <p className="mt-1 text-xs text-destructive">{fieldErrors.name}</p>
+            )}
           </div>
           <div>
             <Label htmlFor="email">Email</Label>
@@ -80,7 +129,11 @@ export function RegisterPage() {
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               className="mt-1"
+              aria-invalid={!!fieldErrors.email}
             />
+            {fieldErrors.email && (
+              <p className="mt-1 text-xs text-destructive">{fieldErrors.email}</p>
+            )}
           </div>
           <div>
             <Label htmlFor="password">Password</Label>
@@ -90,10 +143,15 @@ export function RegisterPage() {
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               className="mt-1"
+              aria-invalid={!!fieldErrors.password}
             />
-            <p className="mt-1 text-xs text-ink-soft">
-              At least 8 characters, with a letter and a number.
-            </p>
+            {fieldErrors.password ? (
+              <p className="mt-1 text-xs text-destructive">{fieldErrors.password}</p>
+            ) : (
+              <p className="mt-1 text-xs text-ink-soft">
+                At least 8 characters, with a letter and a number.
+              </p>
+            )}
           </div>
 
           <div>
@@ -104,8 +162,12 @@ export function RegisterPage() {
               value={form.confirmPassword}
               onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
               className="mt-1"
+              aria-invalid={!!fieldErrors.confirmPassword}
               onKeyDown={(e) => e.key === "Enter" && submit()}
             />
+            {fieldErrors.confirmPassword && (
+              <p className="mt-1 text-xs text-destructive">{fieldErrors.confirmPassword}</p>
+            )}
           </div>
           <Button
             onClick={submit}

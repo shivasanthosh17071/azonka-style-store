@@ -29,9 +29,10 @@ export function ProfilePage() {
   };
 
   const resendVerification = async () => {
+    if (!user?.email) return;
     setResending(true);
     try {
-      await authApi.resendVerificationEmail();
+      await authApi.resendVerificationEmail({ email: user.email });
       toast.success("Verification email sent — check your inbox");
     } catch (err) {
       toast.error(errorMessage(err, "Could not send verification email"));

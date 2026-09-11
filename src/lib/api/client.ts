@@ -17,11 +17,18 @@ export const getAccessToken = () => accessToken;
 
 export class ApiException extends Error {
   status?: number;
+  code?: string;
   errors?: { field?: string; message: string }[];
-  constructor(message: string, status?: number, errors?: { field?: string; message: string }[]) {
+  constructor(
+    message: string,
+    status?: number,
+    errors?: { field?: string; message: string }[],
+    code?: string,
+  ) {
     super(message);
     this.status = status;
     this.errors = errors;
+    this.code = code;
   }
 }
 
@@ -51,6 +58,7 @@ const AUTH_EXEMPT = [
   "/auth/refresh-token",
   "/auth/send-otp",
   "/auth/verify-otp",
+  "/auth/resend-verification",
 ];
 
 let refreshPromise: Promise<string | null> | null = null;
@@ -87,7 +95,8 @@ http.interceptors.response.use(
 
     const message = error.response?.data?.message || error.message || "Something went wrong";
     const errors = error.response?.data?.errors;
-    return Promise.reject(new ApiException(message, error.response?.status, errors));
+    const code = error.response?.data?.code;
+    return Promise.reject(new ApiException(message, error.response?.status, errors, code));
   },
 );
 

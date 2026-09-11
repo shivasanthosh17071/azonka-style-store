@@ -14,6 +14,7 @@ export interface ApiEnvelope<T> {
   data?: T;
   meta?: PaginationMeta;
   errors?: { field?: string; message: string }[];
+  code?: string;
 }
 
 /* ---------- users ---------- */
