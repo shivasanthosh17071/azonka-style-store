@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthProvider";
 import { useCart } from "@/hooks/useCart";
 import * as authApi from "@/lib/api/auth.api";
 import { ApiException, errorMessage } from "@/lib/api/client";
+import { Spinner } from "@/components/common/Spinner";
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -32,9 +33,10 @@ export function LoginPage() {
     }
     setLoading(true);
     try {
-      await login(identifier, password);
+      const loggedInUser = await login(identifier, password);
       await cart.mergeGuestCartIntoServer();
-      navigate(from, { replace: true });
+      const destination = loggedInUser.role === "admin" ? (from.startsWith("/admin") ? from : "/admin") : from;
+      navigate(destination, { replace: true });
     } catch (err) {
       if (err instanceof ApiException && err.code === "EMAIL_NOT_VERIFIED") {
         setUnverified(true);
@@ -75,8 +77,9 @@ export function LoginPage() {
                 type="button"
                 onClick={resend}
                 disabled={resending}
-                className="mt-2 font-semibold text-brick underline disabled:opacity-60"
+                className="mt-2 inline-flex items-center gap-2 font-semibold text-brick underline disabled:opacity-60"
               >
+                {resending && <Spinner className="size-3" />}
                 Resend verification email
               </button>
             )}
@@ -115,7 +118,8 @@ export function LoginPage() {
             disabled={loading}
             className="h-11 w-full rounded-none bg-ink hover:bg-brick"
           >
-            Log in
+            {loading && <Spinner />}
+            {loading ? "Logging in…" : "Log in"}
           </Button>
         </div>
 

@@ -35,13 +35,20 @@ export function Footer() {
               Everyday essentials, considered from the first stitch to the last wear.
             </p>
             <div className="mt-6 flex items-center gap-3">
-              <a href="https://instagram.com" aria-label="Instagram" target="_blank" rel="noreferrer">
+              <a
+                href="https://instagram.com/_ragyai/"
+                aria-label="Instagram"
+                target="_blank"
+                rel="noreferrer"
+              >
                 <Instagram className="size-4 text-primary-foreground/70" />
               </a>
               <a href="https://facebook.com" aria-label="Facebook" target="_blank" rel="noreferrer">
                 <Facebook className="size-4 text-primary-foreground/70" />
               </a>
-              <span className="text-xs font-bold tracking-[0.12em] text-primary-foreground/70">@RAGYAI_M</span>
+              <span className="text-xs font-bold tracking-[0.12em] text-primary-foreground/70">
+                @_ragyai
+              </span>
             </div>
           </div>
           <div>
@@ -70,7 +77,9 @@ export function Footer() {
             </div>
           </div>
           <div>
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-brick">Say hello</h3>
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-brick">
+              Say hello
+            </h3>
             <div className="mt-5 grid gap-3 text-sm text-primary-foreground/65">
               <a href="mailto:hello@ragyaim.in">hello@ragyaim.in</a>
               <a href="tel:+919876543210">+91 98765 43210</a>

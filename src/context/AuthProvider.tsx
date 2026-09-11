@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import * as authApi from "@/lib/api/auth.api";
-import { getAccessToken, setAccessToken } from "@/lib/api/client";
+import { getAccessToken, setAccessToken, refreshAccessToken } from "@/lib/api/client";
 import type { User } from "@/types";
 
 type AuthStatus = "idle" | "loading" | "authenticated" | "guest";
@@ -29,13 +29,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Silent refresh on boot: exchanges the httpOnly refresh cookie for a fresh access token.
+  // Goes through the shared refreshAccessToken() (client.ts) — not authApi.refreshToken()
+  // directly — so this can never race the 401-retry interceptor's own refresh call with the
+  // same single-use, rotating refresh cookie (see refreshAccessToken's comment for why that
+  // race was logging valid sessions out).
   useEffect(() => {
     let cancelled = false;
     setStatus("loading");
-    authApi
-      .refreshToken()
-      .then(async ({ accessToken }) => {
-        setAccessToken(accessToken);
+    refreshAccessToken()
+      .then(async (accessToken) => {
+        if (!accessToken) {
+          if (!cancelled) settle(null);
+          return;
+        }
         const { user: me } = await authApi.getMe();
         if (!cancelled) settle(me);
       })

@@ -11,14 +11,17 @@ import { errorMessage } from "@/lib/api/client";
 
 export function ProfilePage() {
   const { user, refreshUser, logout } = useAuth();
-  const [form, setForm] = useState({ name: user?.name || "", email: user?.email || "", phone: user?.phone || "" });
+  const original = { name: user?.name || "", phone: user?.phone || "" };
+  const [form, setForm] = useState({ ...original, email: user?.email || "" });
   const [saving, setSaving] = useState(false);
   const [resending, setResending] = useState(false);
+
+  const isDirty = form.name !== original.name || form.phone !== original.phone;
 
   const save = async () => {
     setSaving(true);
     try {
-      await usersApi.updateProfile(form);
+      await usersApi.updateProfile({ name: form.name, phone: form.phone });
       await refreshUser();
       toast.success("Profile updated");
     } catch (err) {
@@ -61,13 +64,14 @@ export function ProfilePage() {
       </div>
       <div>
         <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="mt-1" />
+        <Input id="email" type="email" value={form.email} disabled className="mt-1 opacity-60" />
+        <p className="mt-1 text-xs text-ink-soft">Contact support to change the email on your account.</p>
       </div>
       <div>
         <Label htmlFor="phone">Phone</Label>
         <Input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} className="mt-1" />
       </div>
-      <Button onClick={save} disabled={saving} className="rounded-none bg-ink hover:bg-brick">
+      <Button onClick={save} disabled={saving || !isDirty} className="rounded-none bg-ink hover:bg-brick">
         Save changes
       </Button>
       <Button variant="outline" onClick={() => logout()} className="ml-3 rounded-none sm:hidden">

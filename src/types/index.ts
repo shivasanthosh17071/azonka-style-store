@@ -324,7 +324,6 @@ export interface CreateOrderPayload {
   fromCart?: boolean;
   shippingAddress: ShippingAddressInput;
   addressId?: string;
-  guestInfo?: { name: string; email: string; phone: string };
   couponCode?: string;
   paymentMethod: PaymentMethod;
   notes?: string;
@@ -425,7 +424,10 @@ export interface CustomerRow {
 
 export interface CustomerDetail {
   customer: User;
-  orders: Pick<Order, "_id" | "orderNumber" | "totalAmount" | "orderStatus" | "paymentStatus" | "createdAt" | "items">[];
+  orders: Pick<
+    Order,
+    "_id" | "orderNumber" | "totalAmount" | "orderStatus" | "paymentStatus" | "createdAt" | "items"
+  >[];
   stats: { orderCount: number; totalSpend: number; averageOrderValue: number };
 }
 
@@ -447,9 +449,17 @@ export interface LowStockRow {
 
 export interface StoreSettings {
   _id: string;
-  business: { name?: string; email?: string; phone?: string; address?: string; gstin?: string; instagram?: string };
+  business: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    gstin?: string;
+    instagram?: string;
+  };
   shippingFee: number;
   freeShippingThreshold: number;
+  freeShippingBannerText?: string;
   taxPercent: number;
   lowStockThreshold: number;
   codEnabled: boolean;
@@ -459,9 +469,20 @@ export interface StoreSettings {
   metroPincodePrefixes: string[];
 }
 
+export interface PublicSettings {
+  shippingFee: number;
+  freeShippingThreshold: number;
+  freeShippingBannerText: string;
+  instagram: string;
+}
+
 export interface SettingsResponse {
   settings: StoreSettings;
-  paymentKeys: { razorpayKeyId: string | null; razorpaySecretSet: boolean; webhookSecretSet: boolean };
+  paymentKeys: {
+    razorpayKeyId: string | null;
+    razorpaySecretSet: boolean;
+    webhookSecretSet: boolean;
+  };
 }
 
 /* ---------- admin: uploads ---------- */

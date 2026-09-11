@@ -111,10 +111,12 @@ export function useCart() {
 
   const count = lines.reduce((sum, l) => sum + l.qty, 0);
 
-  const addItem = (args: { productId: string; sku: string; qty?: number; snapshot: Omit<GuestCartItem, "product" | "sku" | "qty"> }) => {
+  const addItem = async (args: { productId: string; sku: string; qty?: number; snapshot: Omit<GuestCartItem, "product" | "sku" | "qty"> }) => {
     const qty = args.qty ?? 1;
     if (isAuthenticated) {
-      addMutation.mutate({ product: args.productId, sku: args.sku, qty });
+      // mutateAsync (not mutate) so callers can await the real DB stock check
+      // (cart.controller.js) before treating the add as successful.
+      await addMutation.mutateAsync({ product: args.productId, sku: args.sku, qty });
     } else {
       guest.addItem({ product: args.productId, sku: args.sku, qty, ...args.snapshot });
       toast.success("Added to cart");

@@ -63,6 +63,20 @@ const AUTH_EXEMPT = [
 
 let refreshPromise: Promise<string | null> | null = null;
 
+/**
+ * Single entry point for exchanging the httpOnly refresh cookie for a new access token.
+ * Refresh tokens rotate server-side on every use, so two concurrent calls here (the 401
+ * retry path below, and AuthProvider's boot-time silent refresh) would otherwise race —
+ * whichever request the server sees second gets rejected as "already revoked" even though
+ * the first one succeeded. Every caller must go through this shared, deduped promise.
+ */
+export const refreshAccessToken = (): Promise<string | null> => {
+  if (!refreshPromise) {
+    refreshPromise = doRefresh().finally(() => (refreshPromise = null));
+  }
+  return refreshPromise;
+};
+
 const doRefresh = async (): Promise<string | null> => {
   try {
     const res = await http.post<ApiEnvelope<{ accessToken: string }>>("/auth/refresh-token");
@@ -85,8 +99,7 @@ http.interceptors.response.use(
 
     if (error.response?.status === 401 && original && !original._retry && !isExempt) {
       original._retry = true;
-      if (!refreshPromise) refreshPromise = doRefresh().finally(() => (refreshPromise = null));
-      const token = await refreshPromise;
+      const token = await refreshAccessToken();
       if (token) {
         original.headers = { ...original.headers, Authorization: `Bearer ${token}` };
         return http.request(original);

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useAdminSettings, useUpdateSettings } from "@/hooks/queries/useAdmin";
-import { ApiException } from "@/lib/api/client";
+import { errorMessage } from "@/lib/api/client";
 import type { StoreSettings } from "@/types";
 
 const toCsv = (arr: string[] | undefined) => (arr || []).join(", ");
@@ -41,7 +41,7 @@ export function SettingsPage() {
       });
       toast.success("Settings saved");
     } catch (err) {
-      toast.error(err instanceof ApiException ? err.message : "Could not save settings");
+      toast.error(errorMessage(err, "Could not save settings"));
     }
   };
 
@@ -89,6 +89,16 @@ export function SettingsPage() {
           <div>
             <Label>Free shipping threshold (₹)</Label>
             <Input type="number" value={form.freeShippingThreshold ?? 0} onChange={(e) => setForm({ ...form, freeShippingThreshold: Number(e.target.value) })} className="mt-1 rounded-none" />
+          </div>
+          <div className="sm:col-span-2">
+            <Label>Free shipping banner text (optional override)</Label>
+            <Input
+              value={form.freeShippingBannerText ?? ""}
+              onChange={(e) => setForm({ ...form, freeShippingBannerText: e.target.value })}
+              placeholder={`Free shipping on orders over ₹${form.freeShippingThreshold ?? 999}`}
+              className="mt-1 rounded-none"
+            />
+            <p className="mt-1 text-xs text-ink-soft">Leave blank to show the default text computed from the threshold above.</p>
           </div>
           <div>
             <Label>Tax (%)</Label>

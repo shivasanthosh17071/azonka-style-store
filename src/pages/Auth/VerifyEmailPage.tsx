@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import * as authApi from "@/lib/api/auth.api";
 import { errorMessage } from "@/lib/api/client";
+import { Loader } from "@/components/common/Loader";
 
 export function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -49,7 +50,7 @@ export function VerifyEmailPage() {
 
   return (
     <div className="section-wrap flex min-h-[60vh] flex-col items-center justify-center py-16 text-center">
-      {status === "verifying" && <p className="text-sm text-ink-soft">Verifying your email…</p>}
+      {status === "verifying" && <Loader label="Verifying your email" />}
 
       {status === "success" && (
         <>

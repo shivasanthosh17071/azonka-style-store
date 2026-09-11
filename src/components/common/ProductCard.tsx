@@ -52,7 +52,9 @@ export function ProductCard({ product }: { product: Product }) {
         <Button
           variant="ghost"
           size="icon"
-          aria-label={wished ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+          aria-label={
+            wished ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`
+          }
           onClick={(e) => {
             e.preventDefault();
             onWishlistClick();
@@ -63,7 +65,11 @@ export function ProductCard({ product }: { product: Product }) {
         </Button>
       </Link>
       <div className="pt-4">
-        {categoryName && <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">{categoryName}</p>}
+        {categoryName && (
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
+            {categoryName}
+          </p>
+        )}
         <Link to={`/product/${product.slug}`}>
           <h3 className="mt-1.5 text-sm font-semibold text-ink hover:text-brick">{product.name}</h3>
         </Link>
@@ -74,8 +80,12 @@ export function ProductCard({ product }: { product: Product }) {
           <span className="text-lg font-bold text-brick">{formatPrice(product.basePrice)}</span>
           {product.discountPercent > 0 && (
             <>
-              <span className="text-xs text-ink-soft line-through">{formatPrice(product.baseMrp)}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wide text-brick">{product.discountPercent}% off</span>
+              <span className="text-xs text-ink-soft line-through">
+                {formatPrice(product.baseMrp)}
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-wide text-brick">
+                {product.discountPercent}% off
+              </span>
             </>
           )}
         </div>
@@ -97,7 +107,9 @@ export function ProductCard({ product }: { product: Product }) {
           asChild
           className="mt-4 h-10 w-full rounded-none bg-ink text-[11px] font-bold uppercase tracking-[0.14em] text-primary-foreground hover:bg-brick"
         >
-          <Link to={`/product/${product.slug}`}>{product.inStock ? "Select options" : "Sold out"}</Link>
+          <Link to={`/product/${product.slug}`}>
+            {product.inStock ? "Select options" : "Sold out"}
+          </Link>
         </Button>
       </div>
     </article>

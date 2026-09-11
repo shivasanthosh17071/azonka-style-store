@@ -1,13 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { Heart, Minus, Plus, Star, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { StarRating } from "@/components/common/StarRating";
 import { ProductCard } from "@/components/common/ProductCard";
 import { SkeletonCard } from "@/components/common/SkeletonCard";
+import { Loader } from "@/components/common/Loader";
 import { useProduct, useRelatedProducts } from "@/hooks/queries/useProducts";
 import { useReviews, useCreateReview } from "@/hooks/queries/useReviews";
 import { useCheckServiceability } from "@/hooks/queries/useMisc";
@@ -16,11 +23,12 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { useAuth } from "@/context/AuthProvider";
 import { useCartUI } from "@/context/CartUIProvider";
 import { formatDate, formatPrice } from "@/lib/format";
+import { errorMessage } from "@/lib/api/client";
 
 export function ProductDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { data: product, isLoading } = useProduct(slug);
+  const { data: product, isLoading, refetch: refetchProduct } = useProduct(slug);
   const { data: related } = useRelatedProducts(product?._id);
   const { data: reviewData } = useReviews(product?._id);
   const cart = useCart();
@@ -28,11 +36,15 @@ export function ProductDetailPage() {
   const { isAuthenticated } = useAuth();
   const { openDrawer } = useCartUI();
 
-  const colors = useMemo(() => Array.from(new Set(product?.variants.map((v) => v.color) || [])), [product]);
+  const colors = useMemo(
+    () => Array.from(new Set(product?.variants.map((v) => v.color) || [])),
+    [product],
+  );
   const [activeImage, setActiveImage] = useState(0);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
+  const [adding, setAdding] = useState(false);
   const [pincode, setPincode] = useState("");
   const serviceability = useCheckServiceability();
 
@@ -41,38 +53,74 @@ export function ProductDetailPage() {
   }, [product, colors, selectedColor]);
 
   if (isLoading) {
-    return <div className="section-wrap py-16 text-center text-sm text-ink-soft">Loading…</div>;
+    return <Loader />;
   }
   if (!product) {
-    return <div className="section-wrap py-16 text-center text-sm text-ink-soft">Product not found.</div>;
+    return (
+      <div className="section-wrap py-16 text-center text-sm text-ink-soft">Product not found.</div>
+    );
   }
 
   const sizesForColor = product.variants.filter((v) => v.color === selectedColor);
-  const selectedVariant = product.variants.find((v) => v.color === selectedColor && v.size === selectedSize);
+  const selectedVariant = product.variants.find(
+    (v) => v.color === selectedColor && v.size === selectedSize,
+  );
   const maxQty = Math.min(20, selectedVariant?.stock ?? 20);
   const wished = wishlist.isWishlisted(product._id);
 
-  const handleAddToCart = () => {
-    if (!selectedVariant) return;
-    cart.addItem({
-      productId: product._id,
-      sku: selectedVariant.sku,
-      qty,
-      snapshot: {
-        name: product.name,
-        slug: product.slug,
-        image: product.images[0]?.url,
-        size: selectedVariant.size,
-        color: selectedVariant.color,
-        price: selectedVariant.price,
-      },
-    });
-    openDrawer();
+  const addToCart = async () => {
+    if (!selectedVariant) return false;
+
+    // The guest cart is local-only (never touches the server), so it never gets the
+    // stock/isActive re-check that the authenticated add-to-cart endpoint already does
+    // (cart.controller.js). Refetch the product right before adding to catch a variant
+    // that's sold out (or gone) since this page loaded.
+    if (!isAuthenticated) {
+      const { data: fresh } = await refetchProduct();
+      const freshVariant = fresh?.variants.find((v) => v.sku === selectedVariant.sku);
+      if (!freshVariant?.isActive || freshVariant.stock < qty) {
+        toast.error("Sorry, that size just sold out.");
+        return false;
+      }
+    }
+
+    try {
+      await cart.addItem({
+        productId: product._id,
+        sku: selectedVariant.sku,
+        qty,
+        snapshot: {
+          name: product.name,
+          slug: product.slug,
+          image: product.images[0]?.url,
+          size: selectedVariant.size,
+          color: selectedVariant.color,
+          price: selectedVariant.price,
+        },
+      });
+      return true;
+    } catch {
+      // useCart's addItem already toasts the specific reason (e.g. "Only 2 left in stock").
+      return false;
+    }
   };
 
-  const handleBuyNow = () => {
-    handleAddToCart();
-    navigate("/checkout");
+  const handleAddToCart = async () => {
+    setAdding(true);
+    try {
+      if (await addToCart()) openDrawer();
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    setAdding(true);
+    try {
+      if (await addToCart()) navigate("/checkout");
+    } finally {
+      setAdding(false);
+    }
   };
 
   return (
@@ -103,25 +151,37 @@ export function ProductDetailPage() {
 
         <div>
           {typeof product.category === "object" && (
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">{product.category.name}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
+              {product.category.name}
+            </p>
           )}
-          <h1 className="mt-1 font-display text-3xl font-semibold text-ink sm:text-4xl">{product.name}</h1>
+          <h1 className="mt-1 font-display text-3xl font-semibold text-ink sm:text-4xl">
+            {product.name}
+          </h1>
           <div className="mt-2">
             <StarRating value={product.ratingsAverage} count={product.ratingsCount} size="md" />
           </div>
           <div className="mt-4 flex items-baseline gap-3">
-            <span className="text-2xl font-bold text-brick">{formatPrice(selectedVariant?.price ?? product.basePrice)}</span>
+            <span className="text-2xl font-bold text-brick">
+              {formatPrice(selectedVariant?.price ?? product.basePrice)}
+            </span>
             {product.discountPercent > 0 && (
               <>
-                <span className="text-sm text-ink-soft line-through">{formatPrice(selectedVariant?.mrp ?? product.baseMrp)}</span>
-                <span className="text-xs font-bold uppercase text-brick">{product.discountPercent}% off</span>
+                <span className="text-sm text-ink-soft line-through">
+                  {formatPrice(selectedVariant?.mrp ?? product.baseMrp)}
+                </span>
+                <span className="text-xs font-bold uppercase text-brick">
+                  {product.discountPercent}% off
+                </span>
               </>
             )}
           </div>
 
           {colors.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink">Colour: {selectedColor}</h3>
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink">
+                Colour: {selectedColor}
+              </h3>
               <div className="mt-3 flex flex-wrap gap-3">
                 {colors.map((color) => {
                   const swatch = product.variants.find((v) => v.color === color)?.colorHex;
@@ -154,7 +214,9 @@ export function ProductDetailPage() {
                     setQty(1);
                   }}
                   className={`grid h-10 min-w-10 place-items-center border px-3 text-xs font-medium ${
-                    selectedSize === v.size ? "border-brick bg-brick text-primary-foreground" : "border-line text-ink-soft"
+                    selectedSize === v.size
+                      ? "border-brick bg-brick text-primary-foreground"
+                      : "border-line text-ink-soft"
                   } ${!v.isActive || v.stock === 0 ? "cursor-not-allowed opacity-40" : ""}`}
                 >
                   {v.size}
@@ -162,7 +224,9 @@ export function ProductDetailPage() {
               ))}
             </div>
             {selectedVariant && selectedVariant.stock <= 5 && (
-              <p className="mt-2 text-xs font-medium text-brick">Only {selectedVariant.stock} left in stock</p>
+              <p className="mt-2 text-xs font-medium text-brick">
+                Only {selectedVariant.stock} left in stock
+              </p>
             )}
           </div>
 
@@ -196,14 +260,15 @@ export function ProductDetailPage() {
 
           <div className="mt-6 hidden gap-3 sm:flex">
             <Button
-              disabled={!selectedVariant}
+              disabled={!selectedVariant || adding}
               onClick={handleAddToCart}
               className="h-12 flex-1 rounded-none bg-ink text-[11px] font-bold uppercase tracking-[0.14em] hover:bg-brick"
             >
+              {/* {console.log(selectedVariant)} */}
               {selectedVariant ? "Add to cart" : "Select a size"}
             </Button>
             <Button
-              disabled={!selectedVariant}
+              disabled={!selectedVariant || adding}
               onClick={handleBuyNow}
               variant="outline"
               className="h-12 flex-1 rounded-none border-brick text-[11px] font-bold uppercase tracking-[0.14em] text-brick hover:bg-brick/10"
@@ -245,13 +310,15 @@ export function ProductDetailPage() {
             <AccordionItem value="size-chart">
               <AccordionTrigger>Size chart</AccordionTrigger>
               <AccordionContent className="text-ink-soft">
-                Fits true to size. S: 38&quot; chest · M: 40&quot; · L: 42&quot; · XL: 44&quot; · XXL: 46&quot;. Measured flat, laid across the chest.
+                Fits true to size. S: 38&quot; chest · M: 40&quot; · L: 42&quot; · XL: 44&quot; ·
+                XXL: 46&quot;. Measured flat, laid across the chest.
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="care">
               <AccordionTrigger>Care instructions</AccordionTrigger>
               <AccordionContent className="text-ink-soft">
-                Machine wash cold with like colours. Do not bleach. Tumble dry low. Warm iron if needed.
+                Machine wash cold with like colours. Do not bleach. Tumble dry low. Warm iron if
+                needed.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -260,14 +327,14 @@ export function ProductDetailPage() {
 
       <div className="fixed inset-x-0 bottom-16 z-20 flex gap-3 border-t border-line bg-background p-3 sm:hidden">
         <Button
-          disabled={!selectedVariant}
+          disabled={!selectedVariant || adding}
           onClick={handleAddToCart}
           className="h-11 flex-1 rounded-none bg-ink text-[11px] font-bold uppercase tracking-[0.14em] hover:bg-brick"
         >
           {selectedVariant ? "Add to cart" : "Select a size"}
         </Button>
         <Button
-          disabled={!selectedVariant}
+          disabled={!selectedVariant || adding}
           onClick={handleBuyNow}
           className="h-11 flex-1 rounded-none bg-brick text-[11px] font-bold uppercase tracking-[0.14em] hover:bg-brick-dark"
         >
@@ -275,7 +342,11 @@ export function ProductDetailPage() {
         </Button>
       </div>
 
-      <ReviewsSection productId={product._id} isAuthenticated={isAuthenticated} reviews={reviewData} />
+      <ReviewsSection
+        productId={product._id}
+        isAuthenticated={isAuthenticated}
+        reviews={reviewData}
+      />
 
       {related && related.length > 0 && (
         <div className="mt-20">
@@ -309,6 +380,7 @@ function ReviewsSection({
       { rating, comment },
       {
         onSuccess: () => setComment(""),
+        onError: (err) => toast.error(errorMessage(err, "Could not submit your review")),
       },
     );
   };
@@ -316,22 +388,28 @@ function ReviewsSection({
   return (
     <div className="mt-20 border-t border-line pt-12">
       <h2 className="font-display text-3xl font-semibold text-ink">Customer reviews</h2>
-      {reviews && reviews.reviews.length === 0 && <p className="mt-4 text-sm text-ink-soft">No reviews yet — be the first.</p>}
+      {reviews && reviews.reviews.length === 0 && (
+        <p className="mt-4 text-sm text-ink-soft">No reviews yet — be the first.</p>
+      )}
       <div className="mt-6 grid gap-4">
         {reviews?.reviews.map((r) => (
           <div key={r._id} className="border-b border-line pb-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-bold">{typeof r.user === "object" ? r.user.name : "Customer"}</p>
+              <p className="text-sm font-bold">
+                {typeof r.user === "object" ? r.user.name : "Customer"}
+              </p>
               <StarRating value={r.rating} />
             </div>
-            {r.isVerifiedPurchase && <p className="text-[10px] font-semibold uppercase text-brick">Verified purchase</p>}
+            {r.isVerifiedPurchase && (
+              <p className="text-[10px] font-semibold uppercase text-brick">Verified purchase</p>
+            )}
             {r.comment && <p className="mt-2 text-sm text-ink-soft">{r.comment}</p>}
             <p className="mt-1 text-xs text-ink-soft/70">{formatDate(r.createdAt)}</p>
           </div>
         ))}
       </div>
 
-      {isAuthenticated ? (
+      {isAuthenticated && reviews?.viewerCanReview ? (
         <div className="mt-8 max-w-md">
           <h3 className="text-sm font-bold">Write a review</h3>
           <div className="mt-2 flex gap-1">
@@ -347,10 +425,18 @@ function ReviewsSection({
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />
-          <Button onClick={submit} disabled={createReview.isPending} className="mt-3 rounded-none bg-ink hover:bg-brick">
+          <Button
+            onClick={submit}
+            disabled={createReview.isPending}
+            className="mt-3 rounded-none bg-ink hover:bg-brick"
+          >
             Submit review
           </Button>
         </div>
+      ) : isAuthenticated ? (
+        <p className="mt-6 text-sm text-ink-soft">
+          Only customers who've received this product can write a review.
+        </p>
       ) : (
         <p className="mt-6 text-sm text-ink-soft">
           <a href="/login" className="font-semibold text-brick underline">

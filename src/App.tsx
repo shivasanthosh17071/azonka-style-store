@@ -26,25 +26,56 @@ import { ContactPage } from "@/pages/Static/ContactPage";
 import { FaqPage } from "@/pages/Static/FaqPage";
 import { PolicyPage } from "@/pages/Static/PolicyPage";
 import { NotFoundPage } from "@/pages/NotFound/NotFoundPage";
+import { Loader } from "@/components/common/Loader";
 
 // Admin is a large, separate chunk (charts + every admin page) that regular storefront
 // visitors never need — lazy-loaded so it never ships in their initial bundle.
-const AdminLayout = lazy(() => import("@/layouts/AdminLayout").then((m) => ({ default: m.AdminLayout })));
-const DashboardPage = lazy(() => import("@/pages/Admin/DashboardPage").then((m) => ({ default: m.DashboardPage })));
-const ProductsListPage = lazy(() => import("@/pages/Admin/Products/ProductsListPage").then((m) => ({ default: m.ProductsListPage })));
-const ProductFormPage = lazy(() => import("@/pages/Admin/Products/ProductFormPage").then((m) => ({ default: m.ProductFormPage })));
-const AdminOrdersListPage = lazy(() => import("@/pages/Admin/Orders/OrdersListPage").then((m) => ({ default: m.OrdersListPage })));
-const AdminOrderDetailPage = lazy(() => import("@/pages/Admin/Orders/OrderDetailPage").then((m) => ({ default: m.OrderDetailPage })));
-const CustomersListPage = lazy(() => import("@/pages/Admin/Customers/CustomersListPage").then((m) => ({ default: m.CustomersListPage })));
-const CustomerDetailPage = lazy(() => import("@/pages/Admin/Customers/CustomerDetailPage").then((m) => ({ default: m.CustomerDetailPage })));
-const CouponsPage = lazy(() => import("@/pages/Admin/Coupons/CouponsPage").then((m) => ({ default: m.CouponsPage })));
-const CategoriesPage = lazy(() => import("@/pages/Admin/Categories/CategoriesPage").then((m) => ({ default: m.CategoriesPage })));
-const ReviewsPage = lazy(() => import("@/pages/Admin/Reviews/ReviewsPage").then((m) => ({ default: m.ReviewsPage })));
-const InventoryPage = lazy(() => import("@/pages/Admin/Inventory/InventoryPage").then((m) => ({ default: m.InventoryPage })));
-const SettingsPage = lazy(() => import("@/pages/Admin/Settings/SettingsPage").then((m) => ({ default: m.SettingsPage })));
+const AdminLayout = lazy(() =>
+  import("@/layouts/AdminLayout").then((m) => ({ default: m.AdminLayout })),
+);
+const DashboardPage = lazy(() =>
+  import("@/pages/Admin/DashboardPage").then((m) => ({ default: m.DashboardPage })),
+);
+const ProductsListPage = lazy(() =>
+  import("@/pages/Admin/Products/ProductsListPage").then((m) => ({ default: m.ProductsListPage })),
+);
+const ProductFormPage = lazy(() =>
+  import("@/pages/Admin/Products/ProductFormPage").then((m) => ({ default: m.ProductFormPage })),
+);
+const AdminOrdersListPage = lazy(() =>
+  import("@/pages/Admin/Orders/OrdersListPage").then((m) => ({ default: m.OrdersListPage })),
+);
+const AdminOrderDetailPage = lazy(() =>
+  import("@/pages/Admin/Orders/OrderDetailPage").then((m) => ({ default: m.OrderDetailPage })),
+);
+const CustomersListPage = lazy(() =>
+  import("@/pages/Admin/Customers/CustomersListPage").then((m) => ({
+    default: m.CustomersListPage,
+  })),
+);
+const CustomerDetailPage = lazy(() =>
+  import("@/pages/Admin/Customers/CustomerDetailPage").then((m) => ({
+    default: m.CustomerDetailPage,
+  })),
+);
+const CouponsPage = lazy(() =>
+  import("@/pages/Admin/Coupons/CouponsPage").then((m) => ({ default: m.CouponsPage })),
+);
+const CategoriesPage = lazy(() =>
+  import("@/pages/Admin/Categories/CategoriesPage").then((m) => ({ default: m.CategoriesPage })),
+);
+const ReviewsPage = lazy(() =>
+  import("@/pages/Admin/Reviews/ReviewsPage").then((m) => ({ default: m.ReviewsPage })),
+);
+const InventoryPage = lazy(() =>
+  import("@/pages/Admin/Inventory/InventoryPage").then((m) => ({ default: m.InventoryPage })),
+);
+const SettingsPage = lazy(() =>
+  import("@/pages/Admin/Settings/SettingsPage").then((m) => ({ default: m.SettingsPage })),
+);
 
 function AdminFallback() {
-  return <div className="flex min-h-screen items-center justify-center bg-paper text-sm text-ink-soft">Loading…</div>;
+  return <Loader fullScreen className="bg-paper" />;
 }
 
 export default function App() {
@@ -84,7 +115,14 @@ export default function App() {
         <Route path="shop/:categorySlug" element={<ShopPage />} />
         <Route path="product/:slug" element={<ProductDetailPage />} />
         <Route path="cart" element={<CartPage />} />
-        <Route path="checkout" element={<CheckoutPage />} />
+        <Route
+          path="checkout"
+          element={
+            <RequireAuth>
+              <CheckoutPage />
+            </RequireAuth>
+          }
+        />
         <Route path="order-confirmation/:orderId" element={<OrderConfirmationPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />

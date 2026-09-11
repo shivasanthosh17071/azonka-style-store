@@ -187,3 +187,20 @@
   background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
   background-size: 24px 24px;
 }
+
+/* Loader (src/components/common/Loader.tsx): a light sheen crossing the wordmark
+   plus a thread running the length of the rule beneath it. */
+@keyframes brand-sheen {
+  to {
+    background-position: -220% 0;
+  }
+}
+
+@keyframes brand-thread {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}

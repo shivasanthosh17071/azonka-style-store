@@ -2,11 +2,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as shippingApi from "@/lib/api/shipping.api";
 import * as couponsApi from "@/lib/api/coupons.api";
 import * as usersApi from "@/lib/api/users.api";
+import * as settingsApi from "@/lib/api/settings.api";
 import { useAuth } from "@/context/AuthProvider";
 
 export const useCheckServiceability = () =>
   useMutation({
     mutationFn: (pincode: string) => shippingApi.checkServiceability(pincode),
+  });
+
+/** Public, storefront-facing settings — safe for guests, no auth required. */
+export const usePublicSettings = () =>
+  useQuery({
+    queryKey: ["settings", "public"],
+    queryFn: settingsApi.getPublicSettings,
+    staleTime: 5 * 60 * 1000,
   });
 
 export const useApplyCoupon = () =>

@@ -6,17 +6,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionHeading } from "@/components/common/SectionHeading";
+import * as contactApi from "@/lib/api/contact.api";
+import { errorMessage } from "@/lib/api/client";
 
 export function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const [sending, setSending] = useState(false);
 
-  const submit = () => {
+  const submit = async () => {
     if (!form.name || !form.email || !form.message) {
       toast.error("Fill in all fields");
       return;
     }
-    toast.success("Thanks — we'll get back to you within a day.");
-    setForm({ name: "", email: "", message: "" });
+    setSending(true);
+    try {
+      await contactApi.submitContact(form);
+      toast.success("Thanks — we'll get back to you within a day.");
+      setForm({ name: "", email: "", message: "" });
+    } catch (err) {
+      toast.error(errorMessage(err, "Could not send your message"));
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -37,7 +48,7 @@ export function ContactPage() {
             <Label htmlFor="message">Message</Label>
             <Textarea id="message" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} className="mt-1" rows={5} />
           </div>
-          <Button onClick={submit} className="h-11 rounded-none bg-brick hover:bg-brick-dark">
+          <Button onClick={submit} disabled={sending} className="h-11 rounded-none bg-brick hover:bg-brick-dark">
             Send message
           </Button>
         </div>

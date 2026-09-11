@@ -4,15 +4,24 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useCart } from "@/hooks/useCart";
-import { useGuestCart } from "@/context/GuestCartProvider";
 import { useAuth } from "@/context/AuthProvider";
 import { useAddresses, useApplyCoupon } from "@/hooks/queries/useMisc";
 import { useCreateOrder } from "@/hooks/queries/useOrders";
 import * as paymentsApi from "@/lib/api/payments.api";
 import { loadRazorpayScript } from "@/lib/razorpay";
 import { formatPrice } from "@/lib/format";
-import { ApiException } from "@/lib/api/client";
+import { errorMessage } from "@/lib/api/client";
 import type { Address, PaymentMethod } from "@/types";
 
 interface FormState {
@@ -26,44 +35,63 @@ interface FormState {
   pincode: string;
 }
 
-const emptyForm: FormState = { name: "", email: "", phone: "", line1: "", line2: "", city: "", state: "", pincode: "" };
+const emptyForm: FormState = {
+  name: "",
+  email: "",
+  phone: "",
+  line1: "",
+  line2: "",
+  city: "",
+  state: "",
+  pincode: "",
+};
 
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
   const cart = useCart();
-  const guestCart = useGuestCart();
   const { data: addresses } = useAddresses();
   const applyCoupon = useApplyCoupon();
   const createOrder = useCreateOrder();
 
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [showNewAddressForm, setShowNewAddressForm] = useState(!isAuthenticated);
+  const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(
+    null,
+  );
   const [submitting, setSubmitting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated && addresses && addresses.length > 0 && !selectedAddressId) {
+    if (addresses && addresses.length > 0 && !selectedAddressId) {
       const def = addresses.find((a) => a.isDefault) || addresses[0];
       setSelectedAddressId(def._id);
       setShowNewAddressForm(false);
     }
-  }, [isAuthenticated, addresses, selectedAddressId]);
+  }, [addresses, selectedAddressId]);
 
   useEffect(() => {
-    if (isAuthenticated && user && !form.email) {
-      setForm((f) => ({ ...f, name: f.name || user.name, email: user.email, phone: f.phone || user.phone || "" }));
+    if (user && !form.email) {
+      setForm((f) => ({
+        ...f,
+        name: f.name || user.name,
+        email: user.email,
+        phone: f.phone || user.phone || "",
+      }));
     }
-  }, [isAuthenticated, user, form.email]);
+  }, [user, form.email]);
 
   if (cart.lines.length === 0) {
     return (
       <div className="section-wrap flex min-h-[50vh] flex-col items-center justify-center text-center">
         <p className="font-display text-3xl">Your bag is empty.</p>
-        <Button asChild className="mt-6 rounded-none bg-ink text-xs uppercase tracking-[0.15em] hover:bg-brick">
+        <Button
+          asChild
+          className="mt-6 rounded-none bg-ink text-xs uppercase tracking-[0.15em] hover:bg-brick"
+        >
           <a href="/shop">Continue shopping</a>
         </Button>
       </div>
@@ -96,8 +124,15 @@ export function CheckoutPage() {
   };
 
   const validate = () => {
-    if (!isAuthenticated && !form.email) return "Enter your email address";
-    if ((!selectedAddress || showNewAddressForm) && (!form.name || !form.phone || !form.line1 || !form.city || !form.state || form.pincode.length !== 6)) {
+    if (
+      (!selectedAddress || showNewAddressForm) &&
+      (!form.name ||
+        !form.phone ||
+        !form.line1 ||
+        !form.city ||
+        !form.state ||
+        form.pincode.length !== 6)
+    ) {
       return "Fill in a complete shipping address";
     }
     return null;
@@ -105,40 +140,40 @@ export function CheckoutPage() {
 
   const handleApplyCoupon = () => {
     if (!couponCode.trim()) return;
-    const payload = isAuthenticated
-      ? { code: couponCode.trim(), fromCart: true }
-      : { code: couponCode.trim(), items: guestCart.items.map((i) => ({ product: i.product, sku: i.sku, qty: i.qty })) };
-    applyCoupon.mutate(payload, {
-      onSuccess: (res) => {
-        setAppliedCoupon({ code: res.code, discount: res.discount });
-        toast.success(`Coupon applied — you save ${formatPrice(res.discount)}`);
+    applyCoupon.mutate(
+      { code: couponCode.trim(), fromCart: true },
+      {
+        onSuccess: (res) => {
+          setAppliedCoupon({ code: res.code, discount: res.discount });
+          toast.success(`Coupon applied — you save ${formatPrice(res.discount)}`);
+        },
+        onError: (err) => toast.error(errorMessage(err, "Could not apply coupon")),
       },
-      onError: (err) => toast.error(err instanceof ApiException ? err.message : "Could not apply coupon"),
-    });
+    );
   };
 
-  const handlePlaceOrder = async () => {
+  const openConfirm = () => {
     const error = validate();
     if (error) {
       toast.error(error);
       return;
     }
+    setConfirmOpen(true);
+  };
+
+  const handlePlaceOrder = async () => {
     setSubmitting(true);
     try {
       const shippingAddress = buildShippingAddress();
-      const payload = {
+      const { order } = await createOrder.mutateAsync({
         shippingAddress,
-        ...(isAuthenticated ? { fromCart: true } : { items: guestCart.items.map((i) => ({ product: i.product, sku: i.sku, qty: i.qty })) }),
-        ...(isAuthenticated ? {} : { guestInfo: { name: shippingAddress.name, email: form.email, phone: shippingAddress.phone } }),
+        fromCart: true,
         couponCode: appliedCoupon?.code,
         paymentMethod,
-      };
-
-      const { order } = await createOrder.mutateAsync(payload);
+      });
 
       if (paymentMethod === "cod") {
-        if (isAuthenticated) cart.clear();
-        else guestCart.clear();
+        cart.clear();
         navigate(`/order-confirmation/${order._id}`, { state: { order } });
         return;
       }
@@ -157,11 +192,15 @@ export function CheckoutPage() {
         handler: async (response) => {
           try {
             const verified = await paymentsApi.verifyRazorpayPayment(response as never);
-            if (isAuthenticated) cart.clear();
-            else guestCart.clear();
+            cart.clear();
             navigate(`/order-confirmation/${order._id}`, { state: { order: verified.order } });
-          } catch {
-            toast.error("Payment verification failed. Contact support if you were charged.");
+          } catch (err) {
+            toast.error(
+              errorMessage(
+                err,
+                "Payment verification failed. Contact support if you were charged.",
+              ),
+            );
           }
         },
         modal: {
@@ -170,11 +209,13 @@ export function CheckoutPage() {
       });
       razorpay.open();
     } catch (err) {
-      toast.error(err instanceof ApiException ? err.message : "Could not place order");
+      toast.error(errorMessage(err, "Could not place order"));
     } finally {
       setSubmitting(false);
     }
   };
+
+  const confirmAddress = buildShippingAddress();
 
   return (
     <div className="section-wrap py-12 sm:py-16">
@@ -182,20 +223,10 @@ export function CheckoutPage() {
 
       <div className="mt-10 grid gap-10 sm:grid-cols-[1fr_360px]">
         <div className="space-y-10">
-          {!isAuthenticated && (
-            <section>
-              <h2 className="text-sm font-bold uppercase tracking-[0.14em]">Contact</h2>
-              <div className="mt-4">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="mt-1" />
-              </div>
-            </section>
-          )}
-
           <section>
             <h2 className="text-sm font-bold uppercase tracking-[0.14em]">Shipping address</h2>
 
-            {isAuthenticated && addresses && addresses.length > 0 && (
+            {addresses && addresses.length > 0 && (
               <div className="mt-4 grid gap-3">
                 {addresses.map((address: Address) => (
                   <button
@@ -205,7 +236,9 @@ export function CheckoutPage() {
                       setShowNewAddressForm(false);
                     }}
                     className={`border p-4 text-left text-sm ${
-                      selectedAddressId === address._id && !showNewAddressForm ? "border-brick bg-brick/5" : "border-line"
+                      selectedAddressId === address._id && !showNewAddressForm
+                        ? "border-brick bg-brick/5"
+                        : "border-line"
                     }`}
                   >
                     <p className="font-semibold">{address.label}</p>
@@ -229,31 +262,70 @@ export function CheckoutPage() {
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <Label htmlFor="name">Full name</Label>
-                  <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1" />
+                  <Input
+                    id="name"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="mt-1"
+                  />
                 </div>
                 <div>
                   <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} className="mt-1" />
+                  <Input
+                    id="phone"
+                    value={form.phone}
+                    onChange={(e) =>
+                      setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })
+                    }
+                    className="mt-1"
+                  />
                 </div>
                 <div>
                   <Label htmlFor="pincode">Pincode</Label>
-                  <Input id="pincode" value={form.pincode} onChange={(e) => setForm({ ...form, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) })} className="mt-1" />
+                  <Input
+                    id="pincode"
+                    value={form.pincode}
+                    onChange={(e) =>
+                      setForm({ ...form, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) })
+                    }
+                    className="mt-1"
+                  />
                 </div>
                 <div className="sm:col-span-2">
                   <Label htmlFor="line1">Address line 1</Label>
-                  <Input id="line1" value={form.line1} onChange={(e) => setForm({ ...form, line1: e.target.value })} className="mt-1" />
+                  <Input
+                    id="line1"
+                    value={form.line1}
+                    onChange={(e) => setForm({ ...form, line1: e.target.value })}
+                    className="mt-1"
+                  />
                 </div>
                 <div className="sm:col-span-2">
                   <Label htmlFor="line2">Address line 2 (optional)</Label>
-                  <Input id="line2" value={form.line2} onChange={(e) => setForm({ ...form, line2: e.target.value })} className="mt-1" />
+                  <Input
+                    id="line2"
+                    value={form.line2}
+                    onChange={(e) => setForm({ ...form, line2: e.target.value })}
+                    className="mt-1"
+                  />
                 </div>
                 <div>
                   <Label htmlFor="city">City</Label>
-                  <Input id="city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="mt-1" />
+                  <Input
+                    id="city"
+                    value={form.city}
+                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                    className="mt-1"
+                  />
                 </div>
                 <div>
                   <Label htmlFor="state">State</Label>
-                  <Input id="state" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} className="mt-1" />
+                  <Input
+                    id="state"
+                    value={form.state}
+                    onChange={(e) => setForm({ ...form, state: e.target.value })}
+                    className="mt-1"
+                  />
                 </div>
               </div>
             )}
@@ -282,7 +354,9 @@ export function CheckoutPage() {
           <div className="max-h-64 space-y-3 overflow-y-auto">
             {cart.lines.map((item) => (
               <div key={item.key} className="flex gap-3 text-sm">
-                {item.image && <img src={item.image} alt={item.name} className="size-14 object-cover" />}
+                {item.image && (
+                  <img src={item.image} alt={item.name} className="size-14 object-cover" />
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{item.name}</p>
                   <p className="text-xs text-ink-soft">
@@ -295,8 +369,17 @@ export function CheckoutPage() {
           </div>
 
           <div className="flex gap-2 border-t border-line pt-4">
-            <Input placeholder="Coupon code" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
-            <Button variant="outline" className="shrink-0 rounded-none" onClick={handleApplyCoupon} disabled={applyCoupon.isPending}>
+            <Input
+              placeholder="Coupon code"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value)}
+            />
+            <Button
+              variant="outline"
+              className="shrink-0 rounded-none"
+              onClick={handleApplyCoupon}
+              disabled={applyCoupon.isPending}
+            >
               Apply
             </Button>
           </div>
@@ -312,11 +395,13 @@ export function CheckoutPage() {
                 <span>-{formatPrice(appliedCoupon.discount)}</span>
               </div>
             )}
-            <p className="text-xs text-ink-soft">Final shipping, tax and total are confirmed on the next screen.</p>
+            <p className="text-xs text-ink-soft">
+              Final shipping, tax and total are confirmed on the next screen.
+            </p>
           </div>
 
           <Button
-            onClick={handlePlaceOrder}
+            onClick={openConfirm}
             disabled={submitting || createOrder.isPending}
             className="h-12 w-full rounded-none bg-brick text-xs uppercase tracking-[0.16em] hover:bg-brick-dark"
           >
@@ -324,6 +409,36 @@ export function CheckoutPage() {
           </Button>
         </div>
       </div>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm your order details</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-1 text-left text-sm text-ink">
+                <p className="font-semibold">{confirmAddress.name}</p>
+                <p>{confirmAddress.phone}</p>
+                <p>{user?.email}</p>
+                <p className="text-ink-soft">
+                  {confirmAddress.line1}
+                  {confirmAddress.line2 ? `, ${confirmAddress.line2}` : ""}, {confirmAddress.city},{" "}
+                  {confirmAddress.state} — {confirmAddress.pincode}
+                </p>
+                <p className="pt-2 text-xs text-ink-soft">
+                  Please confirm this is the correct delivery address, phone number and email before
+                  we place your order.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go back and edit</AlertDialogCancel>
+            <AlertDialogAction onClick={handlePlaceOrder} className="bg-brick hover:bg-brick-dark">
+              Confirm &amp; {paymentMethod === "cod" ? "place order" : "pay"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { ScrollToTop } from "@/components/common/ScrollToTop";
 import { AuthProvider } from "@/context/AuthProvider";
 import { CartUIProvider } from "@/context/CartUIProvider";
 import { GuestCartProvider } from "@/context/GuestCartProvider";
@@ -24,6 +25,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ErrorBoundary>
       <BrowserRouter>
+        <ScrollToTop />
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <GuestCartProvider>
